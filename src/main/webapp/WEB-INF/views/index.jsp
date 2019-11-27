@@ -4,7 +4,7 @@
 <body>
 <h2>Hello World!</h2>
 
-<form action="/login" method="post" >
+<form action="/user/login" method="post" >
     账号:<input type="text" name="username"/>
     密码<input type="password" name="password"/>
     <button type="submit">提交</button>

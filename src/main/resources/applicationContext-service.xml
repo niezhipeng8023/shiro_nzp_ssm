@@ -50,12 +50,7 @@
     <bean id="myRealm" class="com.shiro.MyReaml">
         <property name="cacheManager" ref="cacheManager" />
         <!-- 配置加密器 -->
-        <property name="credentialsMatcher">
-            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
-                <property name="hashAlgorithmName" value="MD5"></property> <!-- 加密算法的名称 -->
-                <property name="hashIterations" value="1"></property> <!-- 配置加密的次数 -->
-            </bean>
-        </property>
+
     </bean>
 
     <!-- 1. 配置securityManager，也就是shiro的核心。 -->
