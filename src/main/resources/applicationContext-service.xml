@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd">
+
+    <!-- spring自动去扫描base-pack下面或者子包下面的java文件-->
+    <!--管理Service实现类-->
+    <context:component-scan base-package="com.service"/>
+
+    <!-- 配置事务管理器 -->
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 注入数据库连接池 -->
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+
+    <!-- 通知 -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <!-- 传播行为 -->
+            <tx:method name="save*" propagation="REQUIRED" />
+            <tx:method name="insert*" propagation="REQUIRED" />
+            <tx:method name="add*" propagation="REQUIRED" />
+            <tx:method name="create*" propagation="REQUIRED" />
+            <tx:method name="delete*" propagation="REQUIRED" />
+            <tx:method name="update*" propagation="REQUIRED" />
+            <tx:method name="find*" propagation="SUPPORTS" read-only="true" />
+            <tx:method name="select*" propagation="SUPPORTS" read-only="true" />
+            <tx:method name="get*" propagation="SUPPORTS" read-only="true" />
+        </tx:attributes>
+    </tx:advice>
+    <!-- 切面 -->
+    <aop:config>
+        <aop:advisor advice-ref="txAdvice"
+                     pointcut="execution(* com.service.*.*(..))" />
+    </aop:config>
+
+
+    <!-- 缓存管理器 使用Ehcache实现 -->
+    <bean id="cacheManager" class="org.apache.shiro.cache.MemoryConstrainedCacheManager" />
+
+    <!-- 配置Realm,自己定义的myRealm,必须继承AuthorizingRealm -->
+    <bean id="myRealm" class="com.shiro.MyReaml">
+        <property name="cacheManager" ref="cacheManager" />
+        <!-- 配置加密器 -->
+        <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="MD5"></property> <!-- 加密算法的名称 -->
+                <property name="hashIterations" value="1"></property> <!-- 配置加密的次数 -->
+            </bean>
+        </property>
+    </bean>
+
+    <!-- 1. 配置securityManager，也就是shiro的核心。 -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="myRealm" />
+        <!-- 缓存管理器 -->
+        <property name="cacheManager" ref="cacheManager" />
+    </bean>
+
+    <!-- 配置shiroFilter id必须和web.xml 文件中配置的DelegatingFilterProxy的filter-name一致 -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <!-- Shiro的核心安全接口,这个属性是必须的 -->
+        <property name="securityManager" ref="securityManager" />
+        <property name="loginUrl" value="/user/login" />    <!--没有登录的时候，跳转到这个页面-->
+        <property name="unauthorizedUrl" value="/user/nopermission" /> <!--当没有权限的时候，跳转到这个url-->
+
+        <property name="filterChainDefinitions">
+            <value>
+                /logout.action=logout
+                /user/login = anon <!--可以不需要登录-->
+                /user/readName = authc, perms[/readName]  <!-- perms 表示需要该权限才能访问的页面 -->
+                /user/readData = authc, perms[/readData]
+                /user/index = authc, perms[/read]
+                /user/* = authc <!-- authc 表示需要认证才能访问的页面 -->
+            </value>
+        </property>
+    </bean>
+
+
+</beans>
